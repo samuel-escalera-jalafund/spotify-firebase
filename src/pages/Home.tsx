@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../infrastructure/Firebase/firebase.config';
 
@@ -12,6 +13,7 @@ const Home: React.FC = () => {
   const [genres, setGenres] = useState<Genre[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchGenres = async () => {
@@ -38,7 +40,11 @@ const Home: React.FC = () => {
       {error && <p className="text-red-500">{error}</p>}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 w-full max-w-4xl">
         {genres.map((genre) => (
-          <div key={genre.id} className="bg-white rounded-lg shadow hover:shadow-lg transition flex flex-col items-center p-4 cursor-pointer">
+          <div
+            key={genre.id}
+            className="bg-white rounded-lg shadow hover:shadow-lg transition flex flex-col items-center p-4 cursor-pointer hover:bg-green-50"
+            onClick={() => navigate(`/genre/${genre.id}`)}
+          >
             <img src={genre.imageUrl} alt={genre.name} className="w-32 h-32 object-cover rounded-full mb-4 border-4 border-green-200" />
             <h2 className="text-xl font-semibold text-gray-800">{genre.name}</h2>
           </div>
