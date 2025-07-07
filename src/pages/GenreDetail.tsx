@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../infrastructure/Firebase/firebase.config';
 
@@ -14,6 +14,7 @@ const GenreDetail: React.FC = () => {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchArtists = async () => {
@@ -42,7 +43,11 @@ const GenreDetail: React.FC = () => {
       {error && <p className="text-red-500">{error}</p>}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
         {artists.map((artist) => (
-          <div key={artist.id} className="flex flex-col items-center bg-gray-50 rounded-lg shadow p-4 hover:bg-green-100 transition">
+          <div
+            key={artist.id}
+            className="flex flex-col items-center bg-gray-50 rounded-lg shadow p-4 hover:bg-green-100 transition cursor-pointer"
+            onClick={() => navigate(`/artist/${artist.id}`)}
+          >
             <img src={artist.imageUrl} alt={artist.name} className="w-24 h-24 object-cover rounded-full mb-2 border-4 border-green-200" />
             <h3 className="text-lg font-medium text-gray-800">{artist.name}</h3>
           </div>

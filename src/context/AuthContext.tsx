@@ -28,7 +28,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
-      // Admin: email termina en @admin.com (ejemplo simple, puedes mejorar esto)
       setIsAdmin(firebaseUser?.email?.endsWith('@admin.com') ?? false);
     });
     return () => unsubscribe();
