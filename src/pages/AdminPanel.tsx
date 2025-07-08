@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../infrastructure/Firebase/firebase.config';
+import { db, storage } from '../infrastructure/Firebase/firebase.config';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface Genre {
   id: string;
@@ -16,6 +17,8 @@ const AdminPanel: React.FC = () => {
   const [editGenre, setEditGenre] = useState<Genre | null>(null);
   const [form, setForm] = useState({ name: '', imageUrl: '' });
   const [formLoading, setFormLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
 
   const fetchGenres = async () => {
     setLoading(true);
@@ -41,9 +44,13 @@ const AdminPanel: React.FC = () => {
     if (genre) {
       setEditGenre(genre);
       setForm({ name: genre.name, imageUrl: genre.imageUrl });
+      setImagePreview(genre.imageUrl);
+      setImageFile(null);
     } else {
       setEditGenre(null);
       setForm({ name: '', imageUrl: '' });
+      setImagePreview('');
+      setImageFile(null);
     }
     setShowForm(true);
   };
@@ -52,20 +59,37 @@ const AdminPanel: React.FC = () => {
     setShowForm(false);
     setEditGenre(null);
     setForm({ name: '', imageUrl: '' });
+    setImageFile(null);
+    setImagePreview('');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true);
     try {
+      let imageUrl = form.imageUrl;
+      if (imageFile) {
+        const storageRef = ref(storage, `genres/${Date.now()}_${imageFile.name}`);
+        await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(storageRef);
+      }
+      const genreData = { name: form.name, imageUrl };
       if (editGenre) {
-        await updateDoc(doc(db, 'genres', editGenre.id), form);
+        await updateDoc(doc(db, 'genres', editGenre.id), genreData);
       } else {
-        await addDoc(collection(db, 'genres'), form);
+        await addDoc(collection(db, 'genres'), genreData);
       }
       await fetchGenres();
       handleCloseForm();
@@ -148,15 +172,21 @@ const AdminPanel: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Imagen URL</label>
+                <label className="block text-sm font-medium mb-1">Imagen</label>
                 <input
-                  type="text"
-                  name="imageUrl"
-                  value={form.imageUrl}
-                  onChange={handleChange}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
                   className="w-full border rounded px-3 py-2"
-                  required
                 />
+                {/* Si hay imagen seleccionada, muestra preview. Si no, muestra la URL existente si está editando */}
+                {(imagePreview || form.imageUrl) && (
+                  <img
+                    src={imagePreview || form.imageUrl}
+                    alt="Preview"
+                    className="mt-2 w-24 h-24 object-cover rounded-full border"
+                  />
+                )}
               </div>
               <div className="flex justify-end space-x-2">
                 <button
